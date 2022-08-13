@@ -1,25 +1,34 @@
 import datetime
-import urllib.request
+import requests
 
 from bs4 import NavigableString
 
-from parser.const import USER_AGENT
+from parser.const import HEADERS, RETRY_ATTEMPTS
+import sys, errno
 
 
 def get_url(page_number):
-    return 'https://bash.im/index/{}'.format(page_number)
+    return 'https://web.archive.org/bash.im/index/{}'.format(page_number)
 
 
-def fetch_page(page_number):
-    req = urllib.request.Request(
-        url=get_url(page_number),
-        headers={'User-Agent': USER_AGENT}
-    )
+def fetch_page(Session, page_number):
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            req = Session.get(url=get_url(page_number), headers=HEADERS, timeout=(5, 30))
+            try:
+                text = req.content.decode('utf-8')
+                #print(req.request.headers)
+                break
+            except Exception as err:
+                print('От сайта пришел плохой контент:', err)
+        except ConnectionError as err:
+            print('Проблема с соеденением:', err)
 
-    with urllib.request.urlopen(req) as f:
-        response = f.read()
+        if attempt > RETRY_ATTEMPTS-1:
+            sys.stderr.write(f'{RETRY_ATTEMPTS}, неудачных попыток спарсить данные, ошибка на странице: {page_number = }\n')
+            sys.exit(errno.ECANCELED)
 
-    return response
+    return text
 
 
 def parse_quote(quote_article):

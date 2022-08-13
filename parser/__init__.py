@@ -1,6 +1,8 @@
 import sqlite3
 
 from bs4 import BeautifulSoup
+import requests
+from time import sleep
 
 from parser.const import DB_FILE
 from parser.utils import (
@@ -19,6 +21,7 @@ class Parser:
         self.start_page = start_page
         self.end_page = end_page
         self.stdout = stdout
+        self.ClientSession = requests.Session()
         self.db = sqlite3.connect(DB_FILE)
         self.create_table()
 
@@ -36,7 +39,8 @@ class Parser:
             self.parse_quotes(page_number)
 
     def parse_quotes(self, page_number):
-        html = fetch_page(page_number)
+        sleep(2)
+        html = fetch_page(self.ClientSession, page_number)
         soup = BeautifulSoup(html, 'lxml')
         quote_articles = soup.find_all('article', class_='quote')
         for quote_article in quote_articles:
