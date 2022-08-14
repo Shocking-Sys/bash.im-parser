@@ -1,5 +1,6 @@
 import datetime
 import requests
+from requests.exceptions import RequestException 
 
 from bs4 import NavigableString
 
@@ -17,11 +18,10 @@ def fetch_page(Session, page_number):
             req = Session.get(url=get_url(page_number), headers=HEADERS, timeout=(5, 30))
             try:
                 text = req.content.decode('utf-8')
-                #print(req.request.headers)
                 break
-            except Exception as err:
+            except (ValueError, RuntimeError) as err:
                 print('От сайта пришел плохой контент:', err)
-        except ConnectionError as err:
+        except (TimeoutError, RequestException, ConnectionError, OSError) as err:
             print('Проблема с соеденением:', err)
 
         if attempt > RETRY_ATTEMPTS-1:
